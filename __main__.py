@@ -7,6 +7,7 @@ import numpy as np
 import PyQt5.QtWidgets as pq
 
 BITS_IN_BYTE: int = 8
+plt.rcParams['figure.dpi'] = 300
 
 
 def byte_to_bin(number: int) -> list[int]:
@@ -61,6 +62,9 @@ class Signal:
             data_size=data_size,
             data=data[:data_size]
         )
+
+    # def save_to_file(self, modulated_signal: np.ndarray) -> None:
+    #     json_structure: dict[any] =
 
 
 class ModulationWindow(pq.QDialog):
@@ -131,9 +135,15 @@ class ModulationWindow(pq.QDialog):
             bpsk_binary: list[int] = bin_to_bpsk(binary)
             bpsk_data_values.extend(bpsk_binary)
 
-        bpsk_data_signal = np.repeat(bpsk_data_values, signal.data_period)
+        bpsk_data_signal: np.ndarray = np.repeat(bpsk_data_values, signal.data_period)
 
-        plt.plot(signal.time_points, bpsk_data_signal)
+        modulated_signal: np.ndarray = np.multiply(carrier_signal, bpsk_data_signal)
+
+        plt.plot(signal.time_points, modulated_signal)
+        plt.xlabel("Time, s")
+        plt.ylabel("Signal level")
+        plt.grid()
+        plt.ion()
         plt.show()
 
 
