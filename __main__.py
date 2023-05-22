@@ -1,7 +1,26 @@
+import math
 import sys
 from dataclasses import dataclass
+from matplotlib import pyplot as plt
+import numpy as np
 
 import PyQt5.QtWidgets as pq
+
+BITS_IN_BYTE: int = 8
+
+
+def byte_to_bin(number: int) -> list[int]:
+    bin_number: str = bin(number)[2:]
+    binary: list[int] = [int(x) for x in bin_number]
+    zero_bits_len: int = BITS_IN_BYTE - len(bin_number)
+    for bit in range(zero_bits_len):
+        binary.insert(0, 0)
+
+    return binary
+
+
+def bin_to_bpsk(data: list[int]) -> list[int]:
+    return [-1 if bit == 0 else bit for bit in data]
 
 
 @dataclass
@@ -10,26 +29,37 @@ class Signal:
     carrier_freq: int
     noise_level: int
     data_period: int
+    signal_length: float
+    time_points: np.ndarray
     data_size: int
     data: bytes
 
     @classmethod
     def raw_to_signal(
             cls,
-            sampling_freq: str,
-            carrier_freq: str,
-            noise_level: str,
-            data_period: str,
-            data_size: str,
+            sampling_freq_i: str,
+            carrier_freq_i: str,
+            noise_level_i: str,
+            data_period_i: str,
+            data_size_i: str,
             data: bytes
     ) -> "Signal":
+        sampling_freq: int = int(sampling_freq_i)
+        carrier_freq: int = int(carrier_freq_i)
+        noise_level: int = int(noise_level_i)
+        data_period: int = int(data_period_i)
+        data_size: int = int(data_size_i)
+        signal_length: float = data_period * data_size * BITS_IN_BYTE / sampling_freq
+        time_points: np.ndarray = np.arange(0, signal_length, 1 / sampling_freq)
         return cls(
-            sampling_freq=int(sampling_freq),
-            carrier_freq=int(carrier_freq),
-            noise_level=int(noise_level),
-            data_period=int(data_period),
-            data_size=int(data_size),
-            data=data
+            sampling_freq=sampling_freq,
+            carrier_freq=carrier_freq,
+            noise_level=noise_level,
+            data_period=data_period,
+            signal_length=signal_length,
+            time_points=time_points,
+            data_size=data_size,
+            data=data[:data_size]
         )
 
 
@@ -82,15 +112,29 @@ class ModulationWindow(pq.QDialog):
             self.input_data = input_data_file.read()
 
     def modulate(self) -> None:
+
         signal: Signal = Signal.raw_to_signal(
-            self.sampling_freq,
-            self.carrier_freq,
-            self.noise_level,
-            self.data_period,
-            self.data_size,
+            self.sampling_freq.text(),
+            self.carrier_freq.text(),
+            self.noise_level.text(),
+            self.data_period.text(),
+            self.data_size.text(),
             self.input_data
         )
 
+        cos_points: list[float] = [2 * math.pi * x * signal.carrier_freq for x in signal.time_points]
+        carrier_signal: np.ndarray = np.cos(cos_points)
+
+        bpsk_data_values: list[int] = list()
+        for byte in signal.data:
+            binary: list[int] = byte_to_bin(byte)
+            bpsk_binary: list[int] = bin_to_bpsk(binary)
+            bpsk_data_values.extend(bpsk_binary)
+
+        bpsk_data_signal = np.repeat(bpsk_data_values, signal.data_period)
+
+        plt.plot(signal.time_points, bpsk_data_signal)
+        plt.show()
 
 
 def main() -> None:
