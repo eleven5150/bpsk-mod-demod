@@ -1,5 +1,36 @@
 import sys
+from dataclasses import dataclass
+
 import PyQt5.QtWidgets as pq
+
+
+@dataclass
+class Signal:
+    sampling_freq: int
+    carrier_freq: int
+    noise_level: int
+    data_period: int
+    data_size: int
+    data: bytes
+
+    @classmethod
+    def raw_to_signal(
+            cls,
+            sampling_freq: str,
+            carrier_freq: str,
+            noise_level: str,
+            data_period: str,
+            data_size: str,
+            data: bytes
+    ) -> "Signal":
+        return cls(
+            sampling_freq=int(sampling_freq),
+            carrier_freq=int(carrier_freq),
+            noise_level=int(noise_level),
+            data_period=int(data_period),
+            data_size=int(data_size),
+            data=data
+        )
 
 
 class ModulationWindow(pq.QDialog):
@@ -9,37 +40,30 @@ class ModulationWindow(pq.QDialog):
 
         self.setGeometry(500, 500, 500, 500)
 
-        self.modulation_group = pq.QGroupBox()
+        self.modulation_group: pq.QGroupBox = pq.QGroupBox()
 
-        self.sampling_freq = pq.QLineEdit()
-        self.carrier_freq = pq.QLineEdit()
-        self.noise_level = pq.QLineEdit()
-        self.data_period = pq.QLineEdit()
-        self.data_size = pq.QLineEdit()
+        self.sampling_freq: pq.QLineEdit = pq.QLineEdit()
+        self.carrier_freq: pq.QLineEdit = pq.QLineEdit()
+        self.noise_level: pq.QLineEdit = pq.QLineEdit()
+        self.data_period: pq.QLineEdit = pq.QLineEdit()
+        self.data_size: pq.QLineEdit = pq.QLineEdit()
 
-        self.upload_mod_data_button = pq.QPushButton("Upload", self)
+        self.upload_mod_data_button: pq.QPushButton = pq.QPushButton("Upload")
         self.upload_mod_data_button.clicked.connect(self.get_modulated_data)
 
-        self.modulate_button = pq.QPushButton("Modulate", self)
+        self.modulate_button: pq.QPushButton = pq.QPushButton("Modulate", self)
         self.modulate_button.clicked.connect(self.modulate)
 
         self.create_form()
 
-        main_layout = pq.QVBoxLayout()
+        main_layout: pq.QVBoxLayout = pq.QVBoxLayout()
         main_layout.addWidget(self.modulation_group)
 
         self.setLayout(main_layout)
 
-    def get_info(self):
-        print(f"Sampling freq : {self.sampling_freq.text()}")
-        print(f"Carrier frequency : {self.carrier_freq.text()}")
-        print(f"Noise level : {self.noise_level.text()}")
-        print(f"Data period : {self.data_period.text()}")
-        print(f"Data size : {self.data_size.text()}")
+        self.input_data: bytes = bytes()
 
-        self.close()
-
-    def create_form(self):
+    def create_form(self) -> None:
         layout = pq.QFormLayout()
 
         layout.addRow(pq.QLabel("Sampling frequency"), self.sampling_freq)
@@ -52,14 +76,24 @@ class ModulationWindow(pq.QDialog):
 
         self.modulation_group.setLayout(layout)
 
-    def get_modulated_data(self):
-        pass
+    def get_modulated_data(self) -> None:
+        filename: str = pq.QFileDialog.getOpenFileName(self, caption='Choose File')[0]
+        with open(filename, "rb") as input_data_file:
+            self.input_data = input_data_file.read()
 
-    def modulate(self):
-        pass
+    def modulate(self) -> None:
+        signal: Signal = Signal.raw_to_signal(
+            self.sampling_freq,
+            self.carrier_freq,
+            self.noise_level,
+            self.data_period,
+            self.data_size,
+            self.input_data
+        )
 
 
-def main():
+
+def main() -> None:
     app = pq.QApplication(sys.argv)
     window = ModulationWindow()
     window.show()
