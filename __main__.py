@@ -1,3 +1,4 @@
+import json
 import math
 import sys
 from dataclasses import dataclass
@@ -63,8 +64,17 @@ class Signal:
             data=data[:data_size]
         )
 
-    # def save_to_file(self, modulated_signal: np.ndarray) -> None:
-    #     json_structure: dict[any] =
+    def save_to_file(self, modulated_signal: np.ndarray) -> None:
+        output_file: dict[str, any] = {
+            "sampling_freq": self.sampling_freq,
+            "carrier_freq": self.carrier_freq,
+            "data_period": self.data_period,
+            "modulated_signal": modulated_signal.tolist()
+        }
+
+        json_output_file: str = json.dumps(output_file, indent=4)
+        with open("modulated_signal.json", "wt") as modulated_signal_file:
+            modulated_signal_file.write(json_output_file)
 
 
 class ModulationWindow(pq.QDialog):
@@ -145,6 +155,8 @@ class ModulationWindow(pq.QDialog):
         plt.grid()
         plt.ion()
         plt.show()
+
+        signal.save_to_file(modulated_signal)
 
 
 def main() -> None:
