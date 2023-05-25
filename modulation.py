@@ -70,7 +70,6 @@ class SourceSignal:
         noise_level_db: int = modulated_signal_avg_power_db - self.noise_level
         noise_level_avr_power: float = 10 ** (noise_level_db / 10)
         noise_level_power: np.foat64 = np.sqrt(noise_level_avr_power)
-        print(type(noise_level_power))
 
         noise_signal: np.ndarray = np.random.normal(0, noise_level_power, modulated_signal.size)
 
