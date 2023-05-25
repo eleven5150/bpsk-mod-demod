@@ -160,9 +160,4 @@ class ModulationWindow(pq.QDialog):
         plt.show()
 
         source_signal.save_modulated_signal_to_file(modulated_signal)
-        self.start_demodulation()
-
-    def start_demodulation(self) -> None:
-        self.hide()
-        demodulation_window = DemodulationWindow()
-        demodulation_window.exec()
+        self.close()

@@ -1,4 +1,30 @@
+import json
+import math
+from dataclasses import dataclass
+
 import PyQt5.QtWidgets as pq
+import numpy as np
+from matplotlib import pyplot as plt
+
+from extensions import low_pass_filter, BITS_IN_BYTE
+
+
+@dataclass
+class ModulatedSignal:
+    sampling_freq: int
+    carrier_freq: int
+    data_period: int
+    data: np.ndarray
+
+    @classmethod
+    def data_to_modulated_signal(cls, file_data: str) -> "ModulatedSignal":
+        parsed_modulated_signal: dict[str, any] = json.loads(file_data)
+        return cls(
+            sampling_freq=parsed_modulated_signal["sampling_freq"],
+            carrier_freq=parsed_modulated_signal["carrier_freq"],
+            data_period=parsed_modulated_signal["data_period"],
+            data=np.asarray(parsed_modulated_signal["modulated_signal"])
+        )
 
 
 class DemodulationWindow(pq.QDialog):
@@ -39,4 +65,40 @@ class DemodulationWindow(pq.QDialog):
             self.input_data = modulated_data_file.read()
 
     def demodulate(self):
-        pass
+        modulated_signal: ModulatedSignal = ModulatedSignal.data_to_modulated_signal(self.input_data)
+
+        signal_length: float = modulated_signal.data.size / modulated_signal.sampling_freq
+        time_points: np.ndarray = np.arange(0, signal_length, 1 / modulated_signal.sampling_freq)
+
+        cos_points: list[float] = [2 * math.pi * x * modulated_signal.carrier_freq for x in time_points]
+        carrier_signal: np.ndarray = np.cos(cos_points)
+
+        tmp_signal: np.ndarray = np.multiply(modulated_signal.data, carrier_signal)
+        demodulated_signal: np.ndarray = low_pass_filter(
+            tmp_signal,
+            modulated_signal.carrier_freq,
+            modulated_signal.sampling_freq
+        )
+        digital_signal: np.ndarray = demodulated_signal > 0.1
+
+        plt.plot(time_points, modulated_signal.data)
+        plt.plot(time_points, digital_signal)
+        plt.xlabel("Time, s")
+        plt.ylabel("Signal level")
+        plt.grid()
+        plt.ion()
+        plt.show()
+
+        data_bits_raw: list[int] = list()
+        for offset in range(modulated_signal.data_period//2, digital_signal.size, modulated_signal.data_period):
+            data_bits_raw.append(digital_signal[offset])
+
+        data_bits: np.ndarray = np.asarray(data_bits_raw)
+
+        data_bytes = np.split(data_bits, data_bits.size / BITS_IN_BYTE)
+        result_bytes = bytes()
+        for byte in data_bytes:
+            result_bytes += int("".join(str(int(x)) for x in byte), 2).to_bytes(1, "little")
+
+        with open("demodulated_data.bin", "wb") as demodulated_data_file:
+            demodulated_data_file.write(result_bytes)
