@@ -7,7 +7,6 @@ import PyQt5.QtWidgets as pq
 from dataclasses import dataclass
 from matplotlib import pyplot as plt
 
-from demodulation import DemodulationWindow
 from extensions import byte_to_bin, bin_to_bpsk, BITS_IN_BYTE
 
 plt.rcParams['figure.dpi'] = 300
