@@ -7,6 +7,7 @@ import PyQt5.QtWidgets as pq
 from dataclasses import dataclass
 from matplotlib import pyplot as plt
 
+from demodulation import DemodulationWindow
 from extensions import byte_to_bin, bin_to_bpsk, BITS_IN_BYTE
 
 plt.rcParams['figure.dpi'] = 300
@@ -82,7 +83,7 @@ class ModulationWindow(pq.QDialog):
         super(ModulationWindow, self).__init__()
         self.setWindowTitle("BPSK Modulator")
 
-        self.setGeometry(500, 500, 500, 500)
+        self.setGeometry(0, 0, 500, 400)
 
         self.modulation_group: pq.QGroupBox = pq.QGroupBox()
 
@@ -92,8 +93,8 @@ class ModulationWindow(pq.QDialog):
         self.data_period: pq.QLineEdit = pq.QLineEdit()
         self.data_size: pq.QLineEdit = pq.QLineEdit()
 
-        self.upload_mod_data_button: pq.QPushButton = pq.QPushButton("Upload")
-        self.upload_mod_data_button.clicked.connect(self.get_source_signal_raw_data)
+        self.upload_source_data_button: pq.QPushButton = pq.QPushButton("Upload")
+        self.upload_source_data_button.clicked.connect(self.get_source_signal_raw_data)
 
         self.modulate_button: pq.QPushButton = pq.QPushButton("Modulate", self)
         self.modulate_button.clicked.connect(self.modulate)
@@ -106,6 +107,7 @@ class ModulationWindow(pq.QDialog):
         self.setLayout(main_layout)
 
         self.input_data: bytes = bytes()
+        self.demodulation_window = None
 
     def create_form(self) -> None:
         layout = pq.QFormLayout()
@@ -115,7 +117,7 @@ class ModulationWindow(pq.QDialog):
         layout.addRow(pq.QLabel("Noise level"), self.noise_level)
         layout.addRow(pq.QLabel("Data period"), self.data_period)
         layout.addRow(pq.QLabel("Data size"), self.data_size)
-        layout.addRow(pq.QLabel("Upload data"), self.upload_mod_data_button)
+        layout.addRow(pq.QLabel("Upload data"), self.upload_source_data_button)
         layout.addRow(self.modulate_button)
 
         self.modulation_group.setLayout(layout)
@@ -158,4 +160,9 @@ class ModulationWindow(pq.QDialog):
         plt.show()
 
         source_signal.save_modulated_signal_to_file(modulated_signal)
-        self.close()
+        self.start_demodulation()
+
+    def start_demodulation(self) -> None:
+        self.hide()
+        demodulation_window = DemodulationWindow()
+        demodulation_window.exec()

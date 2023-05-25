@@ -5,13 +5,22 @@ import PyQt5.QtWidgets as pq
 from modulation import ModulationWindow
 
 
+class MainWindow(pq.QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        modulation_window = ModulationWindow()
+        modulation_window.exec()
+
+
 def main() -> None:
     app = pq.QApplication(sys.argv)
-    modulation_window = ModulationWindow()
-    modulation_window.show()
-    app.exec()
 
-    sys.exit()
+    window = MainWindow()
+    window.show()
+    window.close()
+
+    sys.exit(app.exec())
 
 
 if __name__ == '__main__':
